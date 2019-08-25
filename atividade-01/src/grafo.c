@@ -6,8 +6,7 @@
 #include <memory.h>
 #include <stdbool.h>
 
-#define COMPONENTE_NAO_DEFINIDA 0
-/*#include <stdbool.h>*/
+#define COMPONENTE_NAO_DEFINIDO 0
 
 /* 
  * Estrutura de dados para representar grafos
@@ -33,7 +32,7 @@ void criaGrafo(Vertice **G, int ordem);
 int acrescentaAresta(Vertice G[], int ordem, int v1, int v2);
 int calculaTamanho(Vertice G[], int ordem);
 void marcarComponente(Vertice *v, int componente, Vertice G[], int ordem);
-void definirComponentesGrafos(Vertice G[], int ordem);
+void definirComponentesGrafo(Vertice G[], int ordem);
 int numComponentes(Vertice G[], int ordem);
 bool conexo(Vertice G[], int ordem);
 
@@ -50,7 +49,7 @@ void criaGrafo(Vertice **G, int ordem)
     for (i = 0; i < ordem; i++)
     {
         (*G)[i].nome = i;
-        (*G)[i].componente = COMPONENTE_NAO_DEFINIDA; /* 0: sem componente atribuida */
+        (*G)[i].componente = COMPONENTE_NAO_DEFINIDO; /* 0: sem componente atribuida */
         (*G)[i].prim = NULL;                          /* Cada vertice sem nenua aresta incidente */
     }
 }
@@ -133,7 +132,7 @@ void marcarComponente(Vertice *v, int componente, Vertice G[], int ordem)
     Aresta *aux;
     Vertice *outroLado;
 
-    if (v->componente != COMPONENTE_NAO_DEFINIDA)
+    if (v->componente != COMPONENTE_NAO_DEFINIDO)
     {
         /*Componente já marcado, nada a ser feito*/
         return;
@@ -148,7 +147,7 @@ void marcarComponente(Vertice *v, int componente, Vertice G[], int ordem)
     }
 }
 
-void definirComponentesGrafos(Vertice G[], int ordem)
+void definirComponentesGrafo(Vertice G[], int ordem)
 {
     int componenteAtual;
     int i;
@@ -157,7 +156,7 @@ void definirComponentesGrafos(Vertice G[], int ordem)
 
     for (i = 0; i < ordem; i++)
     {
-        if (G[i].componente == COMPONENTE_NAO_DEFINIDA)
+        if (G[i].componente == COMPONENTE_NAO_DEFINIDO)
         {
             marcarComponente(&G[i], componenteAtual, G, ordem);
             componenteAtual++;
@@ -179,9 +178,9 @@ int numComponentes(Vertice G[], int ordem)
     {
 
         int componenteAtual = G[i].componente;
-        if (componenteAtual == COMPONENTE_NAO_DEFINIDA)
+        if (componenteAtual == COMPONENTE_NAO_DEFINIDO)
         {
-            /*Executar definirComponentesGrafos(G[], int)*/
+            /*Executar definirComponentesGrafo(G[], int)*/
             /*Componente não definido encontrado, nao incluso na contagem*/
             continue;
         }
@@ -206,8 +205,8 @@ bool conexo(Vertice G[], int ordem)
 {
     /*
     Definição de grafo conexo: se para todo o par de 
-    vertices de um grafo, existe um caminho entre eles, 
-    e temos pelo menos um vértice.
+    vertices, existe um caminho entre eles, e temos 
+    pelo menos um vértice.
 
     Logo, grafos vazios não são conexos.
     */
@@ -228,7 +227,7 @@ void testeVerticesIsolados ()
 
     ordem = 2;
     criaGrafo(&G, ordem);
-    definirComponentesGrafos(G, ordem);
+    definirComponentesGrafo(G, ordem);
 
     imprimeGrafo(G, ordem);
 }
@@ -253,7 +252,7 @@ void testeVerticesConexos ()
     acrescentaAresta(G, ordem, 0, 1);
     acrescentaAresta(G, ordem, 1, 2);
 
-    definirComponentesGrafos(G, ordem);
+    definirComponentesGrafo(G, ordem);
 
     imprimeGrafo(G, ordem);
     
@@ -270,7 +269,7 @@ void testeGrafoVazio ()
     ordem = 0;
 
     criaGrafo(&G, ordem);
-    definirComponentesGrafos(G, ordem);
+    definirComponentesGrafo(G, ordem);
 
     imprimeGrafo(G, ordem);
 }
