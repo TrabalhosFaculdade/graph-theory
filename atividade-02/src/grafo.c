@@ -277,6 +277,8 @@ void buscaLargura(Vertice G[], int ordem, int verticeInicial)
         pintando ele de preto para indicar isso*/
         u->corBuscaLargura = PRETO;
     }
+
+    liberaFila(Q);
 }
 
 /**
@@ -329,10 +331,10 @@ int main(int argc, char *argv[])
     bool eConexo = eConexoBLargura(G, ordemG); /*Teste bobos, mais testes precisam ser feitos */
 
     if (eConexo)
-        printf("Grafo conexo");
+        printf("Grafo conexo\n");
 
     else
-        printf("Grafo não conexo");
+        printf("Grafo não conexo\n");
 
     return 0;
 }
