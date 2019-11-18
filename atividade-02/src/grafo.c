@@ -36,6 +36,11 @@ typedef struct vert
     int paiBuscaLargura;
     int corBuscaLargura;
     int distanciaBuscaLargura;
+
+    int paiBuscaProfundida;
+    int tempoDescobertaBuscaProf;
+    int tempoFinalizacaoBuscaProf;
+    int corBuscaProfundida;
 } Vertice;
 
 /**
@@ -63,6 +68,10 @@ int calculaTamanho(Vertice G[], int ordem);
 void buscaLargura(Vertice G[], int ordem, int verticeInicial);
 bool eConexoBLargura(Vertice G[], int ordem);
 
+void buscaProfundida(Vertice G[], int ordem, int verticeInicial);
+void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo);
+bool eConexoBProf(Vertice G[], int ordem);
+
 /**
  * Operacoes de gerenciamento da fila, usada para o gerenciamento
  * da ordem de navegacao dos vertices do grafo nos algoritmos de busca
@@ -86,9 +95,10 @@ void criaGrafo(Vertice **G, int ordem)
     for (i = 0; i < ordem; i++)
     {
         (*G)[i].nome = i;
-        (*G)[i].componente = 0;                          /* 0: sem componente atribuida */
-        (*G)[i].prim = NULL;                             /* Cada vertice sem nenhuma aresta incidente */
-        (*G)[i].paiBuscaLargura = ELEMENTO_NAO_DEFINIDO; /* Não possui pai antes da busca em largura ser executada */
+        (*G)[i].componente = 0;                             /* 0: sem componente atribuida */
+        (*G)[i].prim = NULL;                                /* Cada vertice sem nenhuma aresta incidente */
+        (*G)[i].paiBuscaLargura = ELEMENTO_NAO_DEFINIDO;    /* Não possui pai antes da busca em largura ser executada */
+        (*G)[i].paiBuscaProfundida = ELEMENTO_NAO_DEFINIDO; /* Não possui pai antes da busca em largura ser executada */
     }
 }
 
@@ -311,6 +321,92 @@ bool eConexoBLargura(Vertice G[], int ordem)
     return pretos == ordem;
 }
 
+/**
+ * Sobre a diferenca com o algoritmo do Cormen: 
+ * aqui, para conseguirmos definir a partir do presente
+ * algoritmo se um grafo e conexo ou nao, precisamos 
+ * visitar apenas o vertice inicial, passado como parâmetro.
+ * 
+ * De outra forma, ao final do algoritmo, todos os vertices 
+ * estarao pretos e visitados 
+*/
+void buscaProfundida(Vertice G[], int ordem, int verticeInicial)
+{
+    int tempo;
+    int i;
+
+    /*Inicializacao de valores dos vertices para a realizacao do algoritmo*/
+    for (i = 0; i < ordem; i++)
+    {
+        G[i].corBuscaProfundida = BRANCO;
+        G[i].paiBuscaProfundida = ELEMENTO_NAO_DEFINIDO;
+    }
+
+    /*tempo: variavel informativa, para determinar em que momentos os vertices foram explorados*/
+    tempo = 0;
+    buscaProfundidaVisita(G, ordem, verticeInicial, &tempo);
+}
+
+/**
+ * Função recursiva, usada para navegar entre os vértices do grafo
+ * Recebe como parametro um ponteiro de tempo, que vai ser usado para
+ * documentar o momento em que o vertice foi 'descoberto' e 'finalizado'.
+*/
+void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo)
+{
+    Aresta *aux;
+    Vertice *u;
+
+    (*tempo)++;
+
+    /*Comeco da visita de um vertice: documentar o tempo de inicio e pintar ele de cinza*/
+    u = &G[verticeAtual];
+    u->tempoDescobertaBuscaProf = *tempo;
+    u->corBuscaProfundida = CINZA;
+
+    /*Prestar uma visita a todos os vertices adjances do vertice atual.
+    Considerar que o metodo atual e recursivo, e sendo esse o caso, a finalizacao
+    se da uma vez que todos os vertices chamados abaixo ja tiverem passado pelo mesmo processo*/
+    for (aux = u->prim; aux != NULL; aux = aux->prox)
+    {
+        
+        Vertice *v = &G[aux->nome];
+        if (v->corBuscaProfundida == BRANCO) /*Apenas visitando vertices brancos, evitando repeticoes*/
+        {
+            v->paiBuscaProfundida = u->nome;
+            buscaProfundidaVisita(G, ordem, v->nome, tempo);
+        }
+    }
+
+    /*Depois de iterar sobre todos os vertices adjancetes do 
+    vertice atual, temos o tempo de finalizacao: pintamos o 
+    vertice de preto, ele esta finalizado*/
+    (*tempo)++;
+    u->corBuscaProfundida = PRETO;
+    u->tempoFinalizacaoBuscaProf = *tempo;
+}
+
+bool eConexoBProf(Vertice G[], int ordem)
+{
+    int brancos, pretos, cinzas, i;
+    brancos = pretos = cinzas = 0;
+
+    for (i = 0; i < ordem; i++)
+    {
+        if (G[i].corBuscaProfundida == BRANCO)
+            brancos++;
+        else if (G[i].corBuscaProfundida == PRETO)
+            pretos++;
+        else if (G[i].corBuscaProfundida == CINZA)
+            cinzas++;
+    }
+
+    /*Impressao de resultados*/
+    printf("Pretos = %d, brancos = %d, cinzas = %d\n", pretos, brancos, cinzas);
+
+    return pretos == ordem;
+}
+
 /*
  * Programinha simples para testar a representacao de grafo
  */
@@ -327,8 +423,8 @@ int main(int argc, char *argv[])
 
     imprimeGrafo(G, ordemG);
 
-    buscaLargura(G, ordemG, 0);
-    bool eConexo = eConexoBLargura(G, ordemG); /*Teste bobos, mais testes precisam ser feitos */
+    buscaProfundida(G, ordemG, 0);
+    bool eConexo = eConexoBProf(G, ordemG); /*Teste bobos, mais testes precisam ser feitos */
 
     if (eConexo)
         printf("Grafo conexo\n");
