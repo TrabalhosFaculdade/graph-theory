@@ -382,10 +382,10 @@ void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo,
     for (aux = u->prim; aux != NULL; aux = aux->prox)
     {
 
-        Vertice *v = &G[aux->nome];
+        Vertice *v = &G[aux->nome]; 
         if (v->corBuscaProfundida == BRANCO) /*Apenas visitando vertices brancos, evitando repeticoes*/
         {
-            v->paiBuscaProfundida = u->nome;
+            v->paiBuscaProfundida = u->nome; /*Criacao de arvore de busca*/
             buscaProfundidaVisita(G, ordem, v->nome, tempo, componente);
         }
     }
