@@ -65,11 +65,13 @@ void imprimeGrafo(Vertice G[], int ordem);
 void criaGrafo(Vertice **G, int ordem);
 int acrescentaAresta(Vertice G[], int ordem, int v1, int v2);
 int calculaTamanho(Vertice G[], int ordem);
+
+
 void buscaLargura(Vertice G[], int ordem, int verticeInicial);
 bool eConexoBLargura(Vertice G[], int ordem);
 
-void buscaProfundida(Vertice G[], int ordem, int verticeInicial);
-void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo);
+void buscaProfundida(Vertice G[], int ordem);
+void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo, int componente);
 bool eConexoBProf(Vertice G[], int ordem);
 
 /**
@@ -95,10 +97,10 @@ void criaGrafo(Vertice **G, int ordem)
     for (i = 0; i < ordem; i++)
     {
         (*G)[i].nome = i;
-        (*G)[i].componente = 0;                             /* 0: sem componente atribuida */
+        (*G)[i].componente = ELEMENTO_NAO_DEFINIDO;       /* 0: sem componente atribuida */
         (*G)[i].prim = NULL;                                /* Cada vertice sem nenhuma aresta incidente */
         (*G)[i].paiBuscaLargura = ELEMENTO_NAO_DEFINIDO;    /* Não possui pai antes da busca em largura ser executada */
-        (*G)[i].paiBuscaProfundida = ELEMENTO_NAO_DEFINIDO; /* Não possui pai antes da busca em largura ser executada */
+        (*G)[i].paiBuscaProfundida = ELEMENTO_NAO_DEFINIDO; /* Não possui pai antes da busca em profundida ser executada */
     }
 }
 
@@ -187,6 +189,11 @@ Fila *inicializaFila(int tamanho)
     return fila;
 }
 
+/**
+ * Adicao de elemento na fila. Considerando a estrutura de dados,
+ * FIFO, vai ser o último a sair considerando todos os elementos 
+ * que foram enfileirados anteriormente
+*/
 void enfileira(Fila *fila, int elemento)
 {
     /*validando se fila atingiu seu limite*/
@@ -322,18 +329,14 @@ bool eConexoBLargura(Vertice G[], int ordem)
 }
 
 /**
- * Sobre a diferenca com o algoritmo do Cormen: 
- * aqui, para conseguirmos definir a partir do presente
+ * Aqui, para conseguirmos definir a partir do presente
  * algoritmo se um grafo e conexo ou nao, precisamos 
- * visitar apenas o vertice inicial, passado como parâmetro.
- * 
- * De outra forma, ao final do algoritmo, todos os vertices 
- * estarao pretos e visitados 
+ * passar para a funcao de visita o componente
 */
-void buscaProfundida(Vertice G[], int ordem, int verticeInicial)
+void buscaProfundida(Vertice G[], int ordem)
 {
     int tempo;
-    int i;
+    int i, j;
 
     /*Inicializacao de valores dos vertices para a realizacao do algoritmo*/
     for (i = 0; i < ordem; i++)
@@ -344,15 +347,23 @@ void buscaProfundida(Vertice G[], int ordem, int verticeInicial)
 
     /*tempo: variavel informativa, para determinar em que momentos os vertices foram explorados*/
     tempo = 0;
-    buscaProfundidaVisita(G, ordem, verticeInicial, &tempo);
+    for (j = 0; j < ordem; j++)
+    {
+        if (G[j].corBuscaProfundida == BRANCO)
+            /*Somente o indice 0 vai ser usado se o grafo for conexo*/
+            buscaProfundidaVisita(G, ordem, j, &tempo, j);
+    }
 }
 
 /**
  * Função recursiva, usada para navegar entre os vértices do grafo
  * Recebe como parametro um ponteiro de tempo, que vai ser usado para
  * documentar o momento em que o vertice foi 'descoberto' e 'finalizado'.
+ * Recebe tambem a componente do vertice sendo visitado. Isso nos permite, 
+ * a partir da funcao base de buscaProfundida, decidir se o grafo e conexo 
+ * ou nao
 */
-void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo)
+void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo, int componente)
 {
     Aresta *aux;
     Vertice *u;
@@ -363,18 +374,19 @@ void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo)
     u = &G[verticeAtual];
     u->tempoDescobertaBuscaProf = *tempo;
     u->corBuscaProfundida = CINZA;
+    u->componente = componente; /*usado na verificacao de conexidade*/
 
     /*Prestar uma visita a todos os vertices adjances do vertice atual.
     Considerar que o metodo atual e recursivo, e sendo esse o caso, a finalizacao
     se da uma vez que todos os vertices chamados abaixo ja tiverem passado pelo mesmo processo*/
     for (aux = u->prim; aux != NULL; aux = aux->prox)
     {
-        
+
         Vertice *v = &G[aux->nome];
         if (v->corBuscaProfundida == BRANCO) /*Apenas visitando vertices brancos, evitando repeticoes*/
         {
             v->paiBuscaProfundida = u->nome;
-            buscaProfundidaVisita(G, ordem, v->nome, tempo);
+            buscaProfundidaVisita(G, ordem, v->nome, tempo, componente);
         }
     }
 
@@ -386,25 +398,62 @@ void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo)
     u->tempoFinalizacaoBuscaProf = *tempo;
 }
 
-bool eConexoBProf(Vertice G[], int ordem)
+/**
+ * Funcao de utilidade usada para definir se um grafo e conexo
+ * ou nao a partir da buscaProfundida
+ * 
+ * A presente funcao conta quantos componentes estao definidos no 
+ * grafo a partir do atributo 'componente' marcados nos vertices.
+*/
+int numComponentes(Vertice G[], int ordem)
 {
-    int brancos, pretos, cinzas, i;
-    brancos = pretos = cinzas = 0;
+    int *componentesDefinidos;
+    int encontrados;
+    int i, j;
+    bool jaDefinido;
+
+    componentesDefinidos = (int *)malloc(ordem * sizeof(int));
+    encontrados = 0;
 
     for (i = 0; i < ordem; i++)
     {
-        if (G[i].corBuscaProfundida == BRANCO)
-            brancos++;
-        else if (G[i].corBuscaProfundida == PRETO)
-            pretos++;
-        else if (G[i].corBuscaProfundida == CINZA)
-            cinzas++;
+
+        int componenteAtual = G[i].componente;
+        if (componenteAtual == ELEMENTO_NAO_DEFINIDO)
+        {
+            /*Executar definirComponentesGrafo(G[], int)*/
+            /*Componente não definido encontrado, nao incluso na contagem*/
+            continue;
+        }
+
+        jaDefinido = false;
+
+        for (j = 0; j < encontrados; j++)
+        {
+            if (componenteAtual == componentesDefinidos[j])
+                jaDefinido = true; /*Componente ja contabilizado, nao incluindo*/
+        }
+
+        if (!jaDefinido)
+            componentesDefinidos[encontrados++] = componenteAtual;
     }
 
-    /*Impressao de resultados*/
-    printf("Pretos = %d, brancos = %d, cinzas = %d\n", pretos, brancos, cinzas);
+    free(componentesDefinidos);
+    return encontrados;
+}
 
-    return pretos == ordem;
+bool eConexoBProf(Vertice G[], int ordem)
+{
+    /*
+    Definição de grafo conexo: se para todo o par de 
+    vertices, existe um caminho entre eles, e temos 
+    pelo menos um vértice. Ou seja, se temos uma, e somente,
+    uma componente definida nele. 
+
+    Importante: grafos vazios não são conexos.
+    */
+
+    return numComponentes(G, ordem) == 1;
 }
 
 /*
@@ -419,18 +468,25 @@ int main(int argc, char *argv[])
     acrescentaAresta(G, ordemG, 0, 1);
     acrescentaAresta(G, ordemG, 1, 2);
     acrescentaAresta(G, ordemG, 2, 3);
-    acrescentaAresta(G, ordemG, 3, 0);
 
+    buscaLargura(G, ordemG, 0);
+    buscaProfundida(G, ordemG);
+    
+    bool eConexoLarg = eConexoBLargura(G, ordemG);
+    bool eConexoProf = eConexoBProf(G, ordemG);
+    
     imprimeGrafo(G, ordemG);
 
-    buscaProfundida(G, ordemG, 0);
-    bool eConexo = eConexoBProf(G, ordemG); /*Teste bobos, mais testes precisam ser feitos */
-
-    if (eConexo)
+    if (eConexoLarg && eConexoProf) {
         printf("Grafo conexo\n");
+        exit(EXIT_SUCCESS);
+    }
 
-    else
+    if (!eConexoLarg && !eConexoProf) {
         printf("Grafo não conexo\n");
+        exit(EXIT_SUCCESS);
+    }
 
-    return 0;
+    printf("Resultado de conexidade divergentes, algoritmos inadequados\n");
+    exit(EXIT_FAILURE);
 }
