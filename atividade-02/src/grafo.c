@@ -62,10 +62,11 @@ typedef struct fila
  * Declaracao das funcoes para manipulacao de grafos 
  */
 void imprimeGrafo(Vertice G[], int ordem);
+void imprimeBuscaLargura(Vertice G[], int ordem);
+void imprimeBuscaProfundidade(Vertice G[], int ordem);
 void criaGrafo(Vertice **G, int ordem);
 int acrescentaAresta(Vertice G[], int ordem, int v1, int v2);
 int calculaTamanho(Vertice G[], int ordem);
-
 
 void buscaLargura(Vertice G[], int ordem, int verticeInicial);
 bool eConexoBLargura(Vertice G[], int ordem);
@@ -97,7 +98,7 @@ void criaGrafo(Vertice **G, int ordem)
     for (i = 0; i < ordem; i++)
     {
         (*G)[i].nome = i;
-        (*G)[i].componente = ELEMENTO_NAO_DEFINIDO;       /* 0: sem componente atribuida */
+        (*G)[i].componente = ELEMENTO_NAO_DEFINIDO;         /* 0: sem componente atribuida */
         (*G)[i].prim = NULL;                                /* Cada vertice sem nenhuma aresta incidente */
         (*G)[i].paiBuscaLargura = ELEMENTO_NAO_DEFINIDO;    /* Não possui pai antes da busca em largura ser executada */
         (*G)[i].paiBuscaProfundida = ELEMENTO_NAO_DEFINIDO; /* Não possui pai antes da busca em profundida ser executada */
@@ -167,6 +168,62 @@ void imprimeGrafo(Vertice G[], int ordem)
         aux = G[i].prim;
         for (; aux != NULL; aux = aux->prox)
             printf("%3d", aux->nome);
+
+        printf("\n");
+    }
+    printf("=========================:\n\n");
+}
+
+void imprimeBuscaLargura(Vertice G[], int ordem)
+{
+    int i, indiceCor, indicePai;
+    const char *cores[3] = {"Branco", "Cinza", "Preto"};
+
+    Aresta *aux;
+
+    printf("===Busca em Largura===:\n");
+    for (i = 0; i < ordem; i++)
+    {
+        indiceCor = G[i].corBuscaLargura - 1;
+        indicePai = G[i].paiBuscaLargura;
+
+        if (indicePai == -1)
+        {
+            printf("V%d (pai: Não tem) (cor:%3s) (distância:%4d) ", i, cores[indiceCor], G[i].distanciaBuscaLargura);
+        }
+        else
+        {
+            printf("V%d (pai: V%2d) (cor:%3s) (distância:%4d) ", i, indicePai, cores[indiceCor], G[i].distanciaBuscaLargura);
+        }
+
+        printf("\n");
+    }
+    printf("=========================:\n\n");
+}
+
+void imprimeBuscaProfundidade(Vertice G[], int ordem)
+{
+    int i, indiceCor, indicePai, tDescoberta, tFinal;
+    const char *cores[3] = {"Branco", "Cinza", "Preto"};
+
+    Aresta *aux;
+
+    printf("===Busca em Profundidade===:\n");
+    for (i = 0; i < ordem; i++)
+    {
+        indiceCor = G[i].corBuscaProfundida - 1;
+        indicePai = G[i].paiBuscaProfundida;
+        tDescoberta = G[i].tempoDescobertaBuscaProf;
+        tFinal = G[i].tempoFinalizacaoBuscaProf;
+
+        if (indicePai == -1)
+        {
+            printf("V%d (pai: Não tem) (cor:%3s) (tempo de descoberta:%4d), (tempo de Finalização:%5d)  ", i, cores[indiceCor], tDescoberta, tFinal);
+        }
+        else
+        {
+            printf("V%d (pai: V%d) (cor:%3s) (tempo de descoberta:%4d), (tempo de Finalização:%5d)  ", i, indicePai, cores[indiceCor], tDescoberta, tFinal);
+        }
 
         printf("\n");
     }
@@ -309,21 +366,13 @@ void buscaLargura(Vertice G[], int ordem, int verticeInicial)
 */
 bool eConexoBLargura(Vertice G[], int ordem)
 {
-    int brancos, pretos, cinzas, i;
-    brancos = pretos = cinzas = 0;
+    int pretos, i;
+    pretos = 0;
 
+    /*Contando quantos vertices pretos tem no grafo*/
     for (i = 0; i < ordem; i++)
-    {
-        if (G[i].corBuscaLargura == BRANCO)
-            brancos++;
-        else if (G[i].corBuscaLargura == PRETO)
+        if (G[i].corBuscaLargura == PRETO)
             pretos++;
-        else if (G[i].corBuscaLargura == CINZA)
-            cinzas++;
-    }
-
-    /*Impressao de resultados*/
-    printf("Pretos = %d, brancos = %d, cinzas = %d\n", pretos, brancos, cinzas);
 
     return pretos == ordem;
 }
@@ -382,7 +431,7 @@ void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo,
     for (aux = u->prim; aux != NULL; aux = aux->prox)
     {
 
-        Vertice *v = &G[aux->nome]; 
+        Vertice *v = &G[aux->nome];
         if (v->corBuscaProfundida == BRANCO) /*Apenas visitando vertices brancos, evitando repeticoes*/
         {
             v->paiBuscaProfundida = u->nome; /*Criacao de arvore de busca*/
@@ -456,10 +505,7 @@ bool eConexoBProf(Vertice G[], int ordem)
     return numComponentes(G, ordem) == 1;
 }
 
-/*
- * Programinha simples para testar a representacao de grafo
- */
-int main(int argc, char *argv[])
+void testeGrafoNaoConexo()
 {
     Vertice *G;
     int ordemG = 5;
@@ -471,22 +517,57 @@ int main(int argc, char *argv[])
 
     buscaLargura(G, ordemG, 0);
     buscaProfundida(G, ordemG);
-    
+
     bool eConexoLarg = eConexoBLargura(G, ordemG);
     bool eConexoProf = eConexoBProf(G, ordemG);
-    
+
     imprimeGrafo(G, ordemG);
+    imprimeBuscaLargura(G, ordemG);
+    imprimeBuscaProfundidade(G, ordemG);
 
-    if (eConexoLarg && eConexoProf) {
+    if (eConexoLarg && eConexoProf)
         printf("Grafo conexo\n");
-        exit(EXIT_SUCCESS);
-    }
 
-    if (!eConexoLarg && !eConexoProf) {
+    if (!eConexoLarg && !eConexoProf)
         printf("Grafo não conexo\n");
-        exit(EXIT_SUCCESS);
-    }
+    
+    printf("\n");
+}
 
-    printf("Resultado de conexidade divergentes, algoritmos inadequados\n");
-    exit(EXIT_FAILURE);
+void testeGrafoConexo()
+{
+    Vertice *G;
+    int ordemG = 3;
+
+    criaGrafo(&G, ordemG);
+    acrescentaAresta(G, ordemG, 0, 1);
+    acrescentaAresta(G, ordemG, 1, 2);
+
+    buscaLargura(G, ordemG, 0);
+    buscaProfundida(G, ordemG);
+
+    bool eConexoLarg = eConexoBLargura(G, ordemG);
+    bool eConexoProf = eConexoBProf(G, ordemG);
+
+    imprimeGrafo(G, ordemG);
+    imprimeBuscaLargura(G, ordemG);
+    imprimeBuscaProfundidade(G, ordemG);
+
+    if (eConexoLarg && eConexoProf)
+        printf("Grafo conexo\n");
+
+    else if (!eConexoLarg && !eConexoProf)
+        printf("Grafo não conexo\n");
+    
+    printf("\n");
+}
+
+/*
+ * Programinha simples para testar a representacao de grafo
+ */
+int main(int argc, char *argv[])
+{
+    testeGrafoNaoConexo();
+    testeGrafoConexo();
+    return EXIT_SUCCESS;
 }
