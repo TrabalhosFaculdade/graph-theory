@@ -62,18 +62,24 @@ typedef struct fila
  * Declaracao das funcoes para manipulacao de grafos 
  */
 void imprimeGrafo(Vertice G[], int ordem);
-void imprimeBuscaLargura(Vertice G[], int ordem);
-void imprimeBuscaProfundidade(Vertice G[], int ordem);
 void criaGrafo(Vertice **G, int ordem);
 int acrescentaAresta(Vertice G[], int ordem, int v1, int v2);
 int calculaTamanho(Vertice G[], int ordem);
 
+/**
+ * Operacoes de busca em largura
+*/
 void buscaLargura(Vertice G[], int ordem, int verticeInicial);
 bool eConexoBLargura(Vertice G[], int ordem);
+void imprimeBuscaLargura(Vertice G[], int ordem);
 
+/**
+ * Operacoes de busca em profundidade
+*/
 void buscaProfundida(Vertice G[], int ordem);
 void buscaProfundidaVisita(Vertice G[], int ordem, int verticeAtual, int *tempo, int componente);
 bool eConexoBProf(Vertice G[], int ordem);
+void imprimeBuscaProfundidade(Vertice G[], int ordem);
 
 /**
  * Operacoes de gerenciamento da fila, usada para o gerenciamento
@@ -507,13 +513,8 @@ bool eConexoBProf(Vertice G[], int ordem)
 */
 void testeGrafo(Vertice *G, int ordem, int verticeInicialBuscaLarg)
 {
-    bool eConexoLarg, eConexoProf;
-
     buscaLargura(G, ordem, verticeInicialBuscaLarg);
     buscaProfundida(G, ordem);
-
-    eConexoLarg = eConexoBLargura(G, ordem);
-    eConexoProf = eConexoBProf(G, ordem);
 
     imprimeGrafo(G, ordem);
     imprimeBuscaLargura(G, ordem);
@@ -587,12 +588,10 @@ void testeGrafoCompletoExcetoPorUmVertice(int ordemG, int verticeIsolado)
 
     for (i = 0; i < ordemG; i++)
     {
-        if (i == verticeIsolado)
-            continue;                    /*pulando vertice isolado*/
+        if (i == verticeIsolado) continue; /*pulando vertice isolado*/
         for (j = i + 1; j < ordemG; j++) /*+1: evitando lacos*/
         {
-            if (j == verticeIsolado)
-                continue; /*pulando vertice isolado*/
+            if (j == verticeIsolado) continue; /*pulando vertice isolado*/
             acrescentaAresta(G, ordemG, i, j);
         }
     }
