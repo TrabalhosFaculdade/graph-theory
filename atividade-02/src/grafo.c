@@ -547,9 +547,64 @@ void testeGrafoConexo()
     testeGrafo(G, ordemG, 0);
 }
 
+/**
+ * Grafo simples e completo: todos os vertices 
+ * adjacentes a todos os os outros vertices, sem laços 
+ * 
+ * Grafo conexo
+*/
+void testeGrafoCompleto(int ordemG)
+{
+    Vertice *G;
+    int i, j;
+
+    criaGrafo(&G, ordemG);
+
+    for (i = 0; i < ordemG; i++)
+        for (j = i + 1; j < ordemG; j++) /*+1: evitando lacos*/
+            acrescentaAresta(G, ordemG, i, j);
+
+    testeGrafo(G, ordemG, 0);
+}
+
+/**
+ * Grafo simples e completo, com excecao de um vertice, que esta isolado
+ * Grafo nao conexo
+*/
+void testeGrafoCompletoExcetoPorUmVertice(int ordemG, int verticeIsolado)
+{
+    Vertice *G;
+    int i, j;
+
+    /*Validacao do indice do vertice isolado*/
+    if (verticeIsolado >= ordemG)
+    {
+        printf("Vertice isolado nao presente entre os vertices do grafo");
+        return;
+    }
+
+    criaGrafo(&G, ordemG);
+
+    for (i = 0; i < ordemG; i++)
+    {
+        if (i == verticeIsolado)
+            continue;                    /*pulando vertice isolado*/
+        for (j = i + 1; j < ordemG; j++) /*+1: evitando lacos*/
+        {
+            if (j == verticeIsolado)
+                continue; /*pulando vertice isolado*/
+            acrescentaAresta(G, ordemG, i, j);
+        }
+    }
+
+    testeGrafo(G, ordemG, 0);
+}
+
 int main(int argc, char *argv[])
 {
     testeGrafoNaoConexo();
     testeGrafoConexo();
+    testeGrafoCompleto(10);
+    testeGrafoCompletoExcetoPorUmVertice(10, 5);
     return EXIT_SUCCESS;
 }
